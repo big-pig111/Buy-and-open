@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lottery History</title>
+    <title>BAO History</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -83,7 +83,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>🎰 Lottery History</h1>
+        <h1>🎰 BAO History</h1>
         
         <div id="history-content">
             <div class="loading">
@@ -93,9 +93,65 @@
         </div>
     </div>
 
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth-compat.js"></script>
+    
     <script>
-        // This script will be populated by the main application
-        // to show actual lottery history data
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBxGJwTpIQw7g2taoyh6VcT14y1O1JAyeg",
+            authDomain: "chat-294cc.firebaseapp.com",
+            projectId: "chat-294cc",
+            storageBucket: "chat-294cc.appspot.com",
+            messagingSenderId: "913615304269",
+            appId: "1:913615304269:web:0c8c0c8c0c8c0c8c0c8c0c"
+        };
+        
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        
+        // Load real lottery history from Firebase
+        async function loadLotteryHistory() {
+            try {
+                const historyContainer = document.getElementById('history-content');
+                historyContainer.innerHTML = '<div class="loading"><p>Loading lottery history...</p></div>';
+                
+                // Get completed rounds with winners
+                const roundsQuery = await db.collection('rounds')
+                    .where('status', '==', 'completed')
+                    .orderBy('createdAt', 'desc')
+                    .limit(20)
+                    .get();
+                
+                if (roundsQuery.empty) {
+                    displayHistory([]);
+                    return;
+                }
+                
+                const historyData = roundsQuery.docs.map(doc => {
+                    const data = doc.data();
+                    return {
+                        id: doc.id,
+                        ...data,
+                        createdAt: data.createdAt || data.processedAt
+                    };
+                });
+                
+                displayHistory(historyData);
+                
+            } catch (error) {
+                console.error('Failed to load history:', error);
+                document.getElementById('history-content').innerHTML = `
+                    <div class="no-history">
+                        <h3>Error Loading History</h3>
+                        <p>Failed to load lottery history: ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
         
         function displayHistory(historyData) {
             const container = document.getElementById('history-content');
@@ -111,47 +167,63 @@
                 return;
             }
             
-            const historyHTML = historyData.map(round => `
-                <div class="history-item ${round.winner ? 'winner' : ''}">
-                    <h3>Round #${round.id}</h3>
-                    ${round.winner ? `<div class="winner-badge">🏆 Winner: ${round.winner.slice(0, 6)}...${round.winner.slice(-4)}</div>` : ''}
-                    <div class="round-info">
-                        <div class="stat">
-                            <div class="stat-value">${round.participants || 0}</div>
-                            <div class="stat-label">Participants</div>
-                        </div>
-                        <div class="stat">
-                            <div class="stat-value">${round.totalAmount || 0}U</div>
-                            <div class="stat-label">Total Amount</div>
-                        </div>
-                        <div class="stat">
-                            <div class="stat-value">${round.status || 'Unknown'}</div>
-                            <div class="stat-label">Status</div>
-                        </div>
-                        <div class="stat">
-                            <div class="stat-value">${round.createdAt ? new Date(round.createdAt.toDate()).toLocaleDateString() : 'N/A'}</div>
-                            <div class="stat-label">Created</div>
+            const historyHTML = historyData.map(round => {
+                const winner = round.winner;
+                const participants = Array.isArray(round.participants) ? round.participants.length : 0;
+                const totalAmount = round.totalAmount || 0;
+                const level = round.level || 'Unknown';
+                const prizeAmount = round.prizeAmount || 0;
+                const createdAt = round.createdAt ? new Date(round.createdAt.toDate()).toLocaleDateString() : 'N/A';
+                
+                return `
+                    <div class="history-item ${winner ? 'winner' : ''}">
+                        <h3>${level}U Round #${round.id.slice(-8)}</h3>
+                        ${winner ? `
+                            <div class="winner-badge">🏆 Winner: ${winner.walletAddress ? winner.walletAddress.slice(0, 6) + '...' + winner.walletAddress.slice(-4) : 'Unknown'}</div>
+                            <div class="winner-info">
+                                <strong>Prize: ${prizeAmount}U</strong> | 
+                                <strong>Participants: ${participants}/10</strong>
+                            </div>
+                        ` : ''}
+                        <div class="round-info">
+                            <div class="stat">
+                                <div class="stat-value">${participants}</div>
+                                <div class="stat-label">Participants</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-value">${totalAmount}U</div>
+                                <div class="stat-label">Total Pool</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-value">${level}U</div>
+                                <div class="stat-label">Tier</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-value">${createdAt}</div>
+                                <div class="stat-label">Completed</div>
+                            </div>
                         </div>
                     </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
             
             container.innerHTML = historyHTML;
         }
         
-        // Listen for messages from parent window
+        // Auto-load history when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            loadLotteryHistory();
+        });
+        
+        // Refresh history every 30 seconds
+        setInterval(loadLotteryHistory, 30000);
+        
+        // Listen for messages from parent window (fallback)
         window.addEventListener('message', function(event) {
             if (event.data.type === 'UPDATE_HISTORY') {
                 displayHistory(event.data.history);
             }
         });
-        
-        // Show placeholder if no data received
-        setTimeout(() => {
-            if (document.getElementById('history-content').innerHTML.includes('Loading')) {
-                displayHistory([]);
-            }
-        }, 3000);
     </script>
 </body>
 </html>
