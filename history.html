@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lottery History</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #3B82F6;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .history-item {
+            background: #f8f9fa;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border-left: 4px solid #10B981;
+        }
+        .winner {
+            border-left-color: #F59E0B;
+            background: #fef3c7;
+        }
+        .round-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .stat {
+            text-align: center;
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+            border: 1px solid #e5e7eb;
+        }
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #3B82F6;
+        }
+        .stat-label {
+            font-size: 0.9em;
+            color: #6b7280;
+            margin-top: 5px;
+        }
+        .no-history {
+            text-align: center;
+            color: #6b7280;
+            font-style: italic;
+            padding: 40px;
+        }
+        .loading {
+            text-align: center;
+            color: #3B82F6;
+            padding: 40px;
+        }
+        .winner-badge {
+            background: #F59E0B;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎰 Lottery History</h1>
+        
+        <div id="history-content">
+            <div class="loading">
+                <p>Loading lottery history...</p>
+                <p>This will show completed rounds and winners</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // This script will be populated by the main application
+        // to show actual lottery history data
+        
+        function displayHistory(historyData) {
+            const container = document.getElementById('history-content');
+            
+            if (!historyData || historyData.length === 0) {
+                container.innerHTML = `
+                    <div class="no-history">
+                        <h3>No History Yet</h3>
+                        <p>Be the first to participate in our lottery game!</p>
+                        <p>Complete rounds will appear here once the game starts.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            const historyHTML = historyData.map(round => `
+                <div class="history-item ${round.winner ? 'winner' : ''}">
+                    <h3>Round #${round.id}</h3>
+                    ${round.winner ? `<div class="winner-badge">🏆 Winner: ${round.winner.slice(0, 6)}...${round.winner.slice(-4)}</div>` : ''}
+                    <div class="round-info">
+                        <div class="stat">
+                            <div class="stat-value">${round.participants || 0}</div>
+                            <div class="stat-label">Participants</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">${round.totalAmount || 0}U</div>
+                            <div class="stat-label">Total Amount</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">${round.status || 'Unknown'}</div>
+                            <div class="stat-label">Status</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">${round.createdAt ? new Date(round.createdAt.toDate()).toLocaleDateString() : 'N/A'}</div>
+                            <div class="stat-label">Created</div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            
+            container.innerHTML = historyHTML;
+        }
+        
+        // Listen for messages from parent window
+        window.addEventListener('message', function(event) {
+            if (event.data.type === 'UPDATE_HISTORY') {
+                displayHistory(event.data.history);
+            }
+        });
+        
+        // Show placeholder if no data received
+        setTimeout(() => {
+            if (document.getElementById('history-content').innerHTML.includes('Loading')) {
+                displayHistory([]);
+            }
+        }, 3000);
+    </script>
+</body>
+</html>

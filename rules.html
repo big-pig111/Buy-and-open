@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <title>How It Works & Rules | Lottery App</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet" />
+</head>
+<body class="bg-white text-gray-800">
+  <div class="max-w-4xl mx-auto px-6 py-10">
+    <h1 class="text-3xl md:text-4xl font-extrabold text-blue-600 mb-6">How It Works & Rules</h1>
+
+    <!-- How it works section -->
+    <section class="mb-16">
+      <div class="text-center mb-12">
+        <h2 class="text-4xl font-bold mb-4 text-gray-800">HOW IT <span class="text-blue-600">WORKS</span></h2>
+        <p class="text-xl text-gray-600">It's simple, even your grandma could do it (no offense grandma)</p>
+      </div>
+      
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+        <div class="bg-gray-50 p-6 rounded-2xl border-2 border-gray-200 shadow-lg">
+          <div class="w-16 h-16 bg-pink-500 rounded-full flex items-center justify-center text-white text-2xl mb-6 mx-auto border-4 border-pink-600">
+            1
+          </div>
+          <h3 class="text-2xl font-bold mb-4 text-center">CONNECT WALLET</h3>
+          <p class="text-center">Link your Solana wallet (Phantom, Solflare, whatever floats your boat)</p>
+        </div>
+        
+        <div class="bg-gray-50 p-6 rounded-2xl border-2 border-gray-200 shadow-lg">
+          <div class="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center text-white text-2xl mb-6 mx-auto border-4 border-blue-600">
+            2
+          </div>
+          <h3 class="text-2xl font-bold mb-4 text-center">BUY TICKETS</h3>
+          <p class="text-center">Choose your amount and get tickets. More tickets = better chance (duh)</p>
+        </div>
+        
+        <div class="bg-gray-50 p-6 rounded-2xl border-2 border-gray-200 shadow-lg">
+          <div class="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center text-white text-2xl mb-6 mx-auto border-4 border-green-600">
+            3
+          </div>
+          <h3 class="text-2xl font-bold mb-4 text-center">WIN (OR NOT)</h3>
+          <p class="text-center">We draw when there's 10 people. 80% to winner, 10% buyback, 5% referrals!</p>
+        </div>
+      </div>
+      
+      <!-- Prize Distribution -->
+      <div class="max-w-3xl mx-auto bg-gray-100 p-8 rounded-2xl border-2 border-gray-200 shadow-lg">
+        <h3 class="text-2xl font-bold mb-6 text-center">PRIZE DISTRIBUTION (10U example)</h3>
+        
+        <div class="space-y-4">
+          <div class="flex items-center">
+            <div class="w-24 font-bold">80U</div>
+            <div class="flex-1 bg-gray-200 h-8 rounded-full overflow-hidden border-2 border-gray-300">
+              <div class="bg-green-500 h-full rounded-full" style="width: 80%"></div>
+            </div>
+            <div class="w-32 ml-4">Winner</div>
+          </div>
+          
+          <div class="flex items-center">
+            <div class="w-24 font-bold">10U</div>
+            <div class="flex-1 bg-gray-200 h-8 rounded-full overflow-hidden border-2 border-gray-300">
+              <div class="bg-purple-500 h-full rounded-full" style="width: 10%"></div>
+            </div>
+            <div class="w-32 ml-4">Buyback</div>
+          </div>
+          
+          <div class="flex items-center">
+            <div class="w-24 font-bold">5U</div>
+            <div class="flex-1 bg-gray-200 h-8 rounded-full overflow-hidden border-2 border-gray-300">
+              <div class="bg-blue-500 h-full rounded-full" style="width: 5%"></div>
+            </div>
+            <div class="w-32 ml-4">Referrals</div>
+          </div>
+          
+          <div class="flex items-center">
+            <div class="w-24 font-bold">4U</div>
+            <div class="flex-1 bg-gray-200 h-8 rounded-full overflow-hidden border-2 border-gray-300">
+              <div class="bg-yellow-500 h-full rounded-full" style="width: 4%"></div>
+            </div>
+            <div class="w-32 ml-4">Grand Prize</div>
+          </div>
+          
+          <div class="flex items-center">
+            <div class="w-24 font-bold">1U</div>
+            <div class="flex-1 bg-gray-200 h-8 rounded-full overflow-hidden border-2 border-gray-300">
+              <div class="bg-pink-500 h-full rounded-full" style="width: 1%"></div>
+            </div>
+            <div class="w-32 ml-4">Developers</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="space-y-8 leading-relaxed">
+      <section>
+        <h2 class="text-2xl font-bold mb-3">1. Basic Rules</h2>
+        <p>Each tier draws automatically once there are 10 participants in that specific tier. There are 2 separate tiers: 2U and 10U. Each tier runs independently with separate rounds. The U amount is dynamically converted based on the current SOL/USD price, and payment is made in SOL.</p>
+      </section>
+
+      <section>
+        <h2 class="text-2xl font-bold mb-3">2. Prize Distribution</h2>
+        <ul class="list-disc pl-6 space-y-1">
+          <li>80% to the winner of the round</li>
+          <li>10% for token buyback (platform retained)</li>
+          <li>5% for referral rewards (evenly split among valid referrers of the participants; e.g., if all 10 players have referrers, each referrer gets 0.5U; total 5U)</li>
+          <li>4% goes to the weekly grand prize pool</li>
+          <li>1% goes to the developer pool</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2 class="text-2xl font-bold mb-3">3. Tickets and Weekly Grand Prize</h2>
+        <p>For every 10U spent, you earn 1 ticket (rounded down). Each week, the system draws 1 winner from all unused tickets. The winner receives the entire weekly grand prize pool, and the winning ticket is then marked as used.</p>
+      </section>
+
+      <section>
+        <h2 class="text-2xl font-bold mb-3">4. On-chain Payment and Verification</h2>
+        <ul class="list-disc pl-6 space-y-1">
+          <li>Users transfer on Solana mainnet to the platform’s project address using a supported wallet.</li>
+          <li>Backend Cloud Functions verify the transaction hash on-chain. Only confirmed and valid incoming transfers are recorded as round participation.</li>
+          <li>Idempotent recording: the same transaction hash can only be recorded once, preventing duplicates.</li>
+          <li>The incoming lamports are converted to SOL and then multiplied by the current SOL/USD price to derive the U amount.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2 class="text-2xl font-bold mb-3">5. Drawing and Transparency</h2>
+        <ul class="list-disc pl-6 space-y-1">
+          <li>Each round draws automatically when 10 participants are reached, using backend random selection (can switch to a verifiable randomness source in future versions).</li>
+          <li>Win records and pool changes are written to Firestore and can be viewed in real time on the frontend.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2 class="text-2xl font-bold mb-3">6. Referral Rewards</h2>
+        <p>If a participant has a referrer bound, the 5U referral pool is split evenly among the referrers of the valid participants in that round (example: if all 10 participants have referrers, each referrer gets 0.5U). Referral balances can be withdrawn in future versions.</p>
+        <p class="mt-2"><strong>Payout Threshold:</strong> Referral rewards are paid out to a wallet once the accumulated balance reaches <strong>1U</strong>. Any amount under 1U will continue to accumulate until the threshold is met, then it will be automatically paid or withdrawn by request.</p>
+      </section>
+
+      <section>
+        <h2 class="text-2xl font-bold mb-3">7. Risk Disclaimer</h2>
+        <ul class="list-disc pl-6 space-y-1">
+          <li>Crypto assets are highly volatile. Participate responsibly.</li>
+          <li>Use official wallets and ensure you are operating on mainnet. Always verify the destination address.</li>
+          <li>No guaranteed returns. This is an entertainment-focused lottery application.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2 class="text-2xl font-bold mb-3">8. Contact</h2>
+        <p>If you have questions or suggestions, please send in-app feedback or open an issue in the repository.</p>
+      </section>
+    </div>
+  </div>
+</body>
+</html>
+
+
