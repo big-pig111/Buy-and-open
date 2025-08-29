@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lottery App - 10 Players Draw</title>
+    <title>BAO App - 10 Players Draw</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
@@ -89,11 +89,11 @@
     <nav class="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-200 shadow-sm">
         <div class="container mx-auto px-6 py-4 flex justify-between items-center">
             <div class="flex items-center space-x-3">
-                <div class="w-10 h-10 bg-gradient-to-br from-primary to-info rounded-xl flex items-center justify-center">
-                    <span class="text-white text-xl font-bold">L</span>
+                <div class="w-10 h-10 rounded-xl overflow-hidden">
+                    <img src="png/4.jpg" alt="BAO Logo" class="w-full h-full object-cover">
                 </div>
                 <h1 class="text-2xl font-display font-bold bg-gradient-to-r from-primary to-info bg-clip-text text-transparent">
-                    Lottery
+                    BAO
                 </h1>
             </div>
             
@@ -145,7 +145,7 @@
         <div class="container mx-auto px-6 relative z-10">
             <div class="max-w-4xl mx-auto text-center">
                 <div class="inline-flex items-center px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full border border-white/20 mb-8">
-                    <span class="text-white/80 text-sm font-medium">🎯 Premium Lottery Platform</span>
+                    <span class="text-white/80 text-sm font-medium">🎯 Premium BAO Platform</span>
                 </div>
                 
                 <h1 class="text-5xl md:text-7xl font-display font-bold mb-8 text-white leading-tight">
@@ -157,7 +157,7 @@
                 </h1>
                 
                 <p class="text-xl md:text-2xl text-gray-300 mb-10 leading-relaxed max-w-3xl mx-auto">
-                    Professional lottery system with automatic draws at 10 participants. 
+                    Professional BAO system with automatic draws at 10 participants. 
                     <span class="text-gold font-semibold">80% winner</span> + 10% buyback + 5% referrals + 4% grand prize + 1% developers
                 </p>
                 
@@ -165,6 +165,10 @@
                     <button id="buy-tickets-btn" class="group bg-gradient-to-r from-gold to-yellow-500 hover:from-yellow-500 hover:to-gold text-dark font-semibold py-4 px-8 rounded-xl transition-all duration-300 shadow-lg hover:shadow-2xl transform hover:-translate-y-1">
                         <i class="fa fa-ticket mr-3 group-hover:scale-110 transition-transform"></i> 
                         Buy Tickets
+                    </button>
+                    <button id="test-lottery" class="group bg-gradient-to-r from-green-500 to-emerald-600 hover:from-emerald-600 hover:to-green-500 text-white font-semibold py-4 px-8 rounded-xl transition-all duration-300 shadow-lg hover:shadow-2xl transform hover:-translate-y-1">
+                        <i class="fa fa-dice mr-3 group-hover:scale-110 transition-transform"></i> 
+                        Test Lottery
                     </button>
                     <button id="open-rules" class="group bg-white/10 hover:bg-white/20 text-white font-medium py-4 px-8 rounded-xl border border-white/20 backdrop-blur-sm transition-all duration-300 hover:border-white/40">
                         <i class="fa fa-info-circle mr-3 group-hover:scale-110 transition-transform"></i> 
@@ -200,7 +204,7 @@
         <div class="absolute inset-0 flex items-center justify-center p-4">
             <div class="bg-white w-full max-w-6xl h-[90vh] rounded-2xl border-4 border-black shadow-2xl overflow-hidden flex flex-col">
                 <div class="flex items-center justify-between px-6 py-4 border-b-4 border-black bg-memeYellow">
-                    <h3 class="text-xl font-extrabold">Lottery History</h3>
+                    <h3 class="text-xl font-extrabold">BAO History</h3>
                     <button id="close-history" class="bg-black text-white font-bold px-4 py-2 rounded-lg border-2 border-black">Close</button>
                 </div>
                 <div class="flex-1">
@@ -785,6 +789,10 @@
         function updateTierUI(tier, participantCount, remaining, totalAmount, status) {
             const suffix = tier === '2u' ? '2u' : '10u';
             
+            // Ensure participant count doesn't exceed 10
+            const cappedParticipantCount = Math.min(participantCount, 10);
+            const cappedRemaining = Math.max(0, 10 - cappedParticipantCount);
+            
             // Update progress bar
             const progressBarElement = document.getElementById(`progress-bar-${suffix}`);
             const progressLabelElement = document.getElementById(`progress-label-${suffix}`);
@@ -796,16 +804,16 @@
             const currentParticipantsElement = document.getElementById(`current-participants-${suffix}`);
             const poolStatusElement = document.getElementById(`pool-status-${suffix}`);
 
-            if (participantCountElement) participantCountElement.textContent = participantCount;
-            if (remainingCountElement) remainingCountElement.textContent = remaining;
+            if (participantCountElement) participantCountElement.textContent = cappedParticipantCount;
+            if (remainingCountElement) remainingCountElement.textContent = cappedRemaining;
             if (totalAmountElement) totalAmountElement.textContent = totalAmount;
-            if (participantCountStatsElement) participantCountStatsElement.textContent = participantCount;
+            if (participantCountStatsElement) participantCountStatsElement.textContent = cappedParticipantCount;
             if (currentPoolElement) currentPoolElement.textContent = totalAmount;
-            if (currentParticipantsElement) currentParticipantsElement.textContent = participantCount;
+            if (currentParticipantsElement) currentParticipantsElement.textContent = cappedParticipantCount;
             if (poolStatusElement) poolStatusElement.textContent = status === 'active' ? 'In progress...' : 'Ended';
 
-            // Progress bar (by count)
-            const progress = Math.min(participantCount * 10, 100);
+            // Progress bar (by count) - cap at 100%
+            const progress = Math.min(cappedParticipantCount * 10, 100);
             if (progressBarElement) progressBarElement.style.width = `${progress}%`;
             
             // Update progress label position
@@ -932,7 +940,16 @@
             activeRoundUnsubscribe = db.collection('rounds').doc(roundId).onSnapshot((doc) => {
                 if (!doc.exists) return;
                 const data = doc.data();
-                // Show only the first time the round completes
+                
+                // Update round info in real-time
+                updateRoundInfo(data);
+                
+                // Show lottery processing status
+                if (data && data.status === 'completed' && !data.winner) {
+                    showNotification('Lottery processing... Please wait', 'info');
+                }
+                
+                // Show draw result when winner is determined
                 if (data && data.status === 'completed' && data.winner && lastResultShownRoundId !== doc.id) {
                     lastResultShownRoundId = doc.id;
                     showDrawResult({ id: doc.id, ...data });
@@ -1234,9 +1251,16 @@
                 if (typeof firebase !== 'undefined' && firebase.functions) {
                     try {
                         const record = firebase.app().functions('us-central1').httpsCallable('recordPurchase');
-                        await record({ amount, signature: txid, walletAddress: wallet.publicKey.toString(), referrer: referralReferrer });
+                        const result = await record({ amount, signature: txid, walletAddress: wallet.publicKey.toString(), referrer: referralReferrer });
+                        
+                        if (result && result.data && result.data.success) {
+                            console.log('Purchase recorded successfully via Cloud Function');
+                        } else {
+                            throw new Error('Cloud Function returned error');
+                        }
                     } catch (fnErr) {
                         console.warn('Cloud Function recordPurchase failed, fallback to frontend write:', fnErr);
+                        showNotification('Backend processing failed, using local fallback', 'warning');
                         await recordTicketPurchase(amount, txid);
                     }
                 } else {
@@ -1249,7 +1273,15 @@
                 
             } catch (error) {
                 console.error('Purchase failed:', error);
-                showNotification('Purchase failed, please retry', 'error');
+                
+                // Handle specific error types
+                if (error.message && error.message.includes('User rejected')) {
+                    showNotification('Transaction was cancelled by user', 'info');
+                } else if (error.message && error.message.includes('insufficient funds')) {
+                    showNotification('Insufficient SOL balance', 'error');
+                } else {
+                    showNotification('Purchase failed, please retry', 'error');
+                }
             } finally {
                 hideLoading();
             }
@@ -1290,7 +1322,19 @@
                                     totalAmount: (roundData.totalAmount || 0) + amount,
                                 });
                                 if (newParticipants.length >= 10) {
-                                    await triggerLottery(roundRef.id);
+                                    // Prevent adding more than 10 participants
+                                    if (newParticipants.length === 10) {
+                                        // Immediately trigger lottery when exactly 10 participants
+                                        await triggerLottery(roundRef.id);
+                                    } else {
+                                        // Revert the update if more than 10
+                                        await roundRef.update({
+                                            participants: roundData.participants,
+                                            totalAmount: roundData.totalAmount,
+                                        });
+                                        showNotification('Round is already full (10 participants)', 'warning');
+                                        return;
+                                    }
                                 }
                             }
                         }
@@ -1305,9 +1349,20 @@
 
         // Trigger draw
         async function triggerLottery(roundId) {
-            // Frontend no longer updates round state directly; backend handles it
-            showNotification('Round is full, waiting for backend to draw', 'info');
-            await loadCurrentRound();
+            try {
+                // Update round status to completed to trigger Cloud Function
+                const roundRef = db.collection('rounds').doc(roundId);
+                await roundRef.update({
+                    status: 'completed',
+                    completedAt: new Date()
+                });
+                
+                showNotification('Round completed! Drawing in progress...', 'success');
+                await loadCurrentRound();
+            } catch (error) {
+                console.error('Failed to trigger lottery:', error);
+                showNotification('Failed to trigger lottery, please contact support', 'error');
+            }
         }
 
         // Load pools info
@@ -1362,8 +1417,11 @@
                     showNotification('Please connect wallet first', 'error');
                     return;
                 }
-                // Scroll to ticket section
-                document.querySelector('#ticket-levels').scrollIntoView({ behavior: 'smooth' });
+                // Scroll to tier selection section
+                const tierSection = document.querySelector('.mt-16.mb-16');
+                if (tierSection) {
+                    tierSection.scrollIntoView({ behavior: 'smooth' });
+                }
             });
 
             // Close modal
@@ -1431,6 +1489,36 @@
                     buyTicket(amount);
                 });
             });
+
+            // Test lottery button (for development)
+            const testLotteryBtn = document.getElementById('test-lottery');
+            if (testLotteryBtn) {
+                testLotteryBtn.addEventListener('click', async () => {
+                    if (!currentUser) {
+                        showNotification('Please connect wallet first', 'error');
+                        return;
+                    }
+                    
+                    try {
+                        // Find current active round
+                        const roundsQuery = await db.collection('rounds')
+                            .where('status', '==', 'active')
+                            .orderBy('createdAt', 'desc')
+                            .limit(1)
+                            .get();
+                        
+                        if (!roundsQuery.empty) {
+                            const roundDoc = roundsQuery.docs[0];
+                            await triggerLottery(roundDoc.id);
+                        } else {
+                            showNotification('No active round found', 'error');
+                        }
+                    } catch (error) {
+                        console.error('Test lottery failed:', error);
+                        showNotification('Test lottery failed', 'error');
+                    }
+                });
+            }
 
             // Copy referral link
             if (copyReferralLinkBtn && referralLinkInput) {
