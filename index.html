@@ -158,7 +158,7 @@
                 
                 <p class="text-xl md:text-2xl text-gray-300 mb-10 leading-relaxed max-w-3xl mx-auto">
                     Professional BAO system with automatic draws at 10 participants. 
-                    <span class="text-gold font-semibold">80% winner</span> + 10% buyback + 5% referrals + 4% grand prize + 1% developers
+                    <span class="text-gold font-semibold">80% to 1 winner</span> + 10% buyback + 5% referrals + 4% grand prize + 1% developers
                 </p>
                 
                 <div class="flex flex-col sm:flex-row justify-center gap-6">
@@ -816,9 +816,11 @@
             const progress = Math.min(cappedParticipantCount * 10, 100);
             if (progressBarElement) progressBarElement.style.width = `${progress}%`;
             
-            // Update progress label position
-            if (progressLabelElement && progress > 0) {
-                progressLabelElement.style.left = `${Math.min(progress, 90)}%`;
+            // Keep progress label fixed in the center of the progress bar
+            if (progressLabelElement) {
+                // Ensure label stays centered regardless of progress
+                progressLabelElement.style.left = '50%';
+                progressLabelElement.style.transform = 'translateX(-50%) translateY(-50%)';
             }
         }
 
@@ -1071,7 +1073,49 @@
             }
         }
 
-        // Load current round
+        // Load current rounds for both tiers
+        async function loadCurrentRounds() {
+            try {
+                // Get active rounds for both tiers
+                const roundsQuery = await db.collection('rounds')
+                    .where('status', '==', 'active')
+                    .get();
+                
+                if (!roundsQuery.empty) {
+                    const rounds = roundsQuery.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    
+                    // Find rounds for each tier
+                    const round2u = rounds.find(r => r.level === 2);
+                    const round10u = rounds.find(r => r.level === 10);
+                    
+                    // Update 2U tier
+                    if (round2u) {
+                        updateTierUI('2u', 
+                            round2u.participants?.length || 0, 
+                            10 - (round2u.participants?.length || 0), 
+                            round2u.totalAmount || 0, 
+                            round2u.status || 'active'
+                        );
+                        updateTierParticipants('2u', round2u.participants || []);
+                    }
+                    
+                    // Update 10U tier
+                    if (round10u) {
+                        updateTierUI('10u', 
+                            round10u.participants?.length || 0, 
+                            10 - (round10u.participants?.length || 0), 
+                            round10u.totalAmount || 0, 
+                            round10u.status || 'active'
+                        );
+                        updateTierParticipants('10u', round10u.participants || []);
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to load current rounds:', error);
+            }
+        }
+
+        // Load current round (legacy function for compatibility)
         async function loadCurrentRound() {
             try {
                 const roundsQuery = db.collection('rounds')
@@ -1554,6 +1598,10 @@
 
             // Initial load
             loadPoolInfo();
+            
+            // Load current rounds data immediately
+            loadCurrentRounds();
+            
             // Ensure there are active rounds for both tiers (create or get via Cloud Function)
             (async () => {
                 try {
@@ -1566,25 +1614,9 @@
                         const createOrGet10u = firebase.app().functions('us-central1').httpsCallable('createOrGetActiveRound');
                         const res10u = await createOrGet10u({ level: 10 });
                         
-                        // Combine both rounds
+                        // Update UI with new rounds
                         if (res2u?.data || res10u?.data) {
-                            const round2u = res2u?.data || { participants: [], totalAmount: 0, level: 2 };
-                            const round10u = res10u?.data || { participants: [], totalAmount: 0, level: 10 };
-                            
-                            currentRound = {
-                                id: round2u.id || round10u.id,
-                                participants: [
-                            ...(round2u.participants || []),
-                            ...(round10u.participants || [])
-                        ],
-                                totalAmount: (round2u.totalAmount || 0) + (round10u.totalAmount || 0),
-                                status: 'active'
-                            };
-                            
-                            updateRoundInfo(currentRound);
-                            
-                            if (round2u.id) attachRoundListener(round2u.id);
-                            if (round10u.id) attachRoundListener(round10u.id);
+                            await loadCurrentRounds();
                         }
                     }
                 } catch (e) {
@@ -1619,22 +1651,26 @@
                     const round2u = rounds.filter(r => r.level === 2).sort((a, b) => b.createdAt - a.createdAt)[0];
                     const round10u = rounds.filter(r => r.level === 10).sort((a, b) => b.createdAt - a.createdAt)[0];
                     
-                    // Combine both rounds into a single currentRound object
-                    currentRound = {
-                        id: round2u?.id || round10u?.id,
-                        participants: [
-                            ...(round2u?.participants || []),
-                            ...(round10u?.participants || [])
-                        ],
-                        totalAmount: (round2u?.totalAmount || 0) + (round10u?.totalAmount || 0),
-                        status: 'active'
-                    };
+                    // Update each tier independently
+                    if (round2u) {
+                        updateTierUI('2u', 
+                            round2u.participants?.length || 0, 
+                            10 - (round2u.participants?.length || 0), 
+                            round2u.totalAmount || 0, 
+                            round2u.status || 'active'
+                        );
+                        if (round2u.id) attachRoundListener(round2u.id);
+                    }
                     
-                    updateRoundInfo(currentRound);
-                    
-                    // Attach listeners to both rounds if they exist
-                    if (round2u?.id) attachRoundListener(round2u.id);
-                    if (round10u?.id) attachRoundListener(round10u.id);
+                    if (round10u) {
+                        updateTierUI('10u', 
+                            round10u.participants?.length || 0, 
+                            10 - (round10u.participants?.length || 0), 
+                            round10u.totalAmount || 0, 
+                            round10u.status || 'active'
+                        );
+                        if (round10u.id) attachRoundListener(round10u.id);
+                    }
                 }
             });
 
