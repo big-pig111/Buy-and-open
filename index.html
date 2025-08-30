@@ -519,7 +519,7 @@
                          <p class="mt-2 text-white/90 text-sm">Rewards accumulate to your balance. Once you reach <strong>1U</strong>, they are auto-paid or can be withdrawn.</p>
                     </div>
                     
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                         <div class="bg-white p-5 rounded-xl border-2 border-black shadow-lg">
                             <h3 class="text-xl font-bold mb-2 text-gray-800">Your Referrals</h3>
                             <p id="referral-people" class="text-3xl font-bold text-blue-600">0</p>
@@ -529,6 +529,25 @@
                             <h3 class="text-xl font-bold mb-2 text-gray-800">Earnings (U)</h3>
                             <p class="text-3xl font-bold text-green-600"><span id="referral-earnings">0</span> U</p>
                         </div>
+                    </div>
+                    
+                    <!-- Token CA Information -->
+                    <div class="bg-white p-5 rounded-xl border-2 border-black shadow-lg">
+                        <h3 class="text-xl font-bold mb-3 text-gray-800 text-center">
+                            <i class="fa fa-coins mr-2 text-gold"></i>
+                            Token Contract Address
+                        </h3>
+                        <div class="flex items-center justify-between bg-gray-50 p-3 rounded-lg border border-gray-200">
+                            <span class="font-mono text-sm text-gray-600 break-all">
+                                F8pXagMFjwM3N6gX3o4Uz7tgPSExqRQgcfXYjbXFpump
+                            </span>
+                            <button id="copy-ca-btn" class="ml-3 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg border-2 border-black transform hover:scale-105 transition-all text-sm">
+                                Copy CA
+                            </button>
+                        </div>
+                        <p class="text-center text-sm text-gray-500 mt-2">
+                            Add this token to your wallet to track your earnings
+                        </p>
                     </div>
                 </div>
             </div>
@@ -1577,6 +1596,20 @@
                         if (!referralLinkInput.value) return;
                         await navigator.clipboard.writeText(referralLinkInput.value);
                         showNotification('Referral link copied', 'success');
+                    } catch (e) {
+                        showNotification('Copy failed, please copy manually', 'error');
+                    }
+                });
+            }
+
+            // Copy CA address
+            const copyCaBtn = document.getElementById('copy-ca-btn');
+            if (copyCaBtn) {
+                copyCaBtn.addEventListener('click', async () => {
+                    try {
+                        const caAddress = 'F8pXagMFjwM3N6gX3o4Uz7tgPSExqRQgcfXYjbXFpump';
+                        await navigator.clipboard.writeText(caAddress);
+                        showNotification('CA address copied to clipboard!', 'success');
                     } catch (e) {
                         showNotification('Copy failed, please copy manually', 'error');
                     }
