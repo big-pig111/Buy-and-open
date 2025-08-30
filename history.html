@@ -94,24 +94,74 @@
     </div>
 
     <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-functions-compat.js"></script>
     
     <script>
+        // Wait for Firebase SDK to load
+        function waitForFirebase() {
+            return new Promise((resolve, reject) => {
+                const checkFirebase = () => {
+                    if (typeof firebase !== 'undefined' && firebase.app) {
+                        resolve();
+                    } else {
+                        setTimeout(checkFirebase, 100);
+                    }
+                };
+                checkFirebase();
+            });
+        }
+        
         // Firebase configuration
         const firebaseConfig = {
-            apiKey: "AIzaSyBxGJwTpIQw7g2taoyh6VcT14y1O1JAyeg",
+            apiKey: "AIzaSyA5Z5ieEbAcfQX0kxGSn9ldGXhzvAwx_8M",
             authDomain: "chat-294cc.firebaseapp.com",
+            databaseURL: "https://chat-294cc-default-rtdb.firebaseio.com",
             projectId: "chat-294cc",
             storageBucket: "chat-294cc.appspot.com",
             messagingSenderId: "913615304269",
-            appId: "1:913615304269:web:0c8c0c8c0c8c0c8c0c8c0c"
+            appId: "1:913615304269:web:0274ffaccb8e6b678e4e04",
+            measurementId: "G-SJR9NDW86B"
         };
         
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
+        let db = null;
+        
+        // Initialize Firebase when SDK is ready
+        async function initializeFirebase() {
+            try {
+                await waitForFirebase();
+                firebase.initializeApp(firebaseConfig);
+                db = firebase.firestore();
+                const auth = firebase.auth();
+                
+                console.log('Firebase initialized successfully');
+                
+                // Enable anonymous auth to avoid permission issues
+                try {
+                    await auth.signInAnonymously();
+                    console.log('Anonymous auth success');
+                } catch (authError) {
+                    console.log('Anonymous auth failed (continuing anyway):', authError);
+                }
+                
+                return true;
+            } catch (error) {
+                console.error('Failed to initialize Firebase:', error);
+                // Show user-friendly error
+                document.getElementById('history-content').innerHTML = `
+                    <div class="no-history">
+                        <h3>Connection Error</h3>
+                        <p>Unable to connect to the database. Please check your internet connection and try again.</p>
+                        <button onclick="location.reload()" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                            Retry
+                        </button>
+                    </div>
+                `;
+                return false;
+            }
+        }
         
         // Load real lottery history from Firebase
         async function loadLotteryHistory() {
@@ -119,27 +169,109 @@
                 const historyContainer = document.getElementById('history-content');
                 historyContainer.innerHTML = '<div class="loading"><p>Loading lottery history...</p></div>';
                 
+                // Ensure Firebase is initialized
+                if (!db) {
+                    const initialized = await initializeFirebase();
+                    if (!initialized) {
+                        throw new Error('Firebase initialization failed');
+                    }
+                }
+                
+                console.log('Firebase initialized, db:', db);
+                console.log('Current user:', firebase.auth().currentUser);
+                
+                // First, let's check what collections exist
+                try {
+                    // Firebase v10 compat doesn't have listCollections, so we'll test individual collections
+                    const testCollections = ['rounds', 'users', 'tickets', 'winners', 'pools'];
+                    for (const collectionName of testCollections) {
+                        try {
+                            const snapshot = await db.collection(collectionName).limit(1).get();
+                            console.log(`Collection ${collectionName}: exists, ${snapshot.size} documents`);
+                        } catch (e) {
+                            console.log(`Collection ${collectionName}: error - ${e.message}`);
+                        }
+                    }
+                } catch (e) {
+                    console.log('Could not check collections:', e);
+                }
+                
                 // Get completed rounds with winners
-                const roundsQuery = await db.collection('rounds')
-                    .where('status', '==', 'completed')
-                    .orderBy('createdAt', 'desc')
-                    .limit(20)
-                    .get();
+                console.log('Querying rounds collection...');
+                
+                // Add timeout and retry logic
+                let roundsQuery;
+                try {
+                    roundsQuery = await Promise.race([
+                        db.collection('rounds')
+                            .where('status', '==', 'completed')
+                            .limit(20)
+                            .get(),
+                        new Promise((_, reject) => 
+                            setTimeout(() => reject(new Error('Query timeout')), 15000)
+                        )
+                    ]);
+                } catch (queryError) {
+                    console.error('Query failed:', queryError);
+                    if (queryError.message === 'Query timeout') {
+                        document.getElementById('history-content').innerHTML = `
+                            <div class="no-history">
+                                <h3>Connection Timeout</h3>
+                                <p>Database query timed out. Please check your internet connection.</p>
+                                <button onclick="loadLotteryHistory()" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                                    Retry
+                                </button>
+                            </div>
+                        `;
+                        return;
+                    }
+                    throw queryError;
+                }
+                
+                console.log('Rounds query result:', roundsQuery);
+                console.log('Number of docs:', roundsQuery.docs.length);
                 
                 if (roundsQuery.empty) {
+                    console.log('No completed rounds found');
+                    // Let's also check for any rounds at all
+                    try {
+                        const allRounds = await db.collection('rounds').limit(5).get();
+                        console.log('Total rounds in collection:', allRounds.docs.length);
+                        if (!allRounds.empty) {
+                            console.log('Sample round data:', allRounds.docs[0].data());
+                        }
+                    } catch (e) {
+                        console.log('Could not query all rounds:', e);
+                    }
                     displayHistory([]);
                     return;
                 }
                 
-                const historyData = roundsQuery.docs.map(doc => {
+                let historyData = roundsQuery.docs.map(doc => {
                     const data = doc.data();
+                    console.log('Round data:', doc.id, data);
                     return {
                         id: doc.id,
                         ...data,
                         createdAt: data.createdAt || data.processedAt
                     };
                 });
+                // Sort client-side by createdAt desc
+                historyData.sort((a, b) => {
+                    const toMillis = (v) => {
+                        if (!v) return 0;
+                        // Firestore Timestamp compat
+                        if (typeof v.toMillis === 'function') return v.toMillis();
+                        // If it's a JS Date
+                        if (v instanceof Date) return v.getTime();
+                        // If it's a plain object like {seconds, nanoseconds}
+                        if (typeof v.seconds === 'number') return v.seconds * 1000 + Math.floor((v.nanoseconds || 0) / 1e6);
+                        return 0;
+                    };
+                    return toMillis(b.createdAt) - toMillis(a.createdAt);
+                });
                 
+                console.log('Processed history data:', historyData);
                 displayHistory(historyData);
                 
             } catch (error) {
@@ -148,6 +280,10 @@
                     <div class="no-history">
                         <h3>Error Loading History</h3>
                         <p>Failed to load lottery history: ${error.message}</p>
+                        <p>Check console for more details</p>
+                        <button onclick="loadLotteryHistory()" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                            Retry
+                        </button>
                     </div>
                 `;
             }
@@ -173,7 +309,16 @@
                 const totalAmount = round.totalAmount || 0;
                 const level = round.level || 'Unknown';
                 const prizeAmount = round.prizeAmount || 0;
-                const createdAt = round.createdAt ? new Date(round.createdAt.toDate()).toLocaleDateString() : 'N/A';
+                const createdAt = (() => {
+                    const v = round.createdAt;
+                    if (!v) return 'N/A';
+                    try {
+                        if (typeof v.toDate === 'function') return v.toDate().toLocaleDateString();
+                        if (v instanceof Date) return v.toLocaleDateString();
+                        if (typeof v.seconds === 'number') return new Date(v.seconds * 1000).toLocaleDateString();
+                    } catch (_) {}
+                    return 'N/A';
+                })();
                 
                 return `
                     <div class="history-item ${winner ? 'winner' : ''}">
@@ -211,7 +356,10 @@
         }
         
         // Auto-load history when page loads
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Initialize Firebase first
+            await initializeFirebase();
+            // Then load history
             loadLotteryHistory();
         });
         
