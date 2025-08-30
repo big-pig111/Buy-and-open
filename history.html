@@ -95,9 +95,7 @@
 
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-functions-compat.js"></script>
     
     <script>
         // Wait for Firebase SDK to load
@@ -134,18 +132,8 @@
                 await waitForFirebase();
                 firebase.initializeApp(firebaseConfig);
                 db = firebase.firestore();
-                const auth = firebase.auth();
                 
                 console.log('Firebase initialized successfully');
-                
-                // Enable anonymous auth to avoid permission issues
-                try {
-                    await auth.signInAnonymously();
-                    console.log('Anonymous auth success');
-                } catch (authError) {
-                    console.log('Anonymous auth failed (continuing anyway):', authError);
-                }
-                
                 return true;
             } catch (error) {
                 console.error('Failed to initialize Firebase:', error);
@@ -178,84 +166,36 @@
                 }
                 
                 console.log('Firebase initialized, db:', db);
-                console.log('Current user:', firebase.auth().currentUser);
                 
-                // First, let's check what collections exist
-                try {
-                    // Firebase v10 compat doesn't have listCollections, so we'll test individual collections
-                    const testCollections = ['rounds', 'users', 'tickets', 'winners', 'pools'];
-                    for (const collectionName of testCollections) {
-                        try {
-                            const snapshot = await db.collection(collectionName).limit(1).get();
-                            console.log(`Collection ${collectionName}: exists, ${snapshot.size} documents`);
-                        } catch (e) {
-                            console.log(`Collection ${collectionName}: error - ${e.message}`);
-                        }
-                    }
-                } catch (e) {
-                    console.log('Could not check collections:', e);
-                }
-                
-                // Get completed rounds with winners
+                // Simple query like admin.html - get all rounds first
                 console.log('Querying rounds collection...');
-                
-                // Add timeout and retry logic
-                let roundsQuery;
-                try {
-                    roundsQuery = await Promise.race([
-                        db.collection('rounds')
-                            .where('status', '==', 'completed')
-                            .limit(20)
-                            .get(),
-                        new Promise((_, reject) => 
-                            setTimeout(() => reject(new Error('Query timeout')), 15000)
-                        )
-                    ]);
-                } catch (queryError) {
-                    console.error('Query failed:', queryError);
-                    if (queryError.message === 'Query timeout') {
-                        document.getElementById('history-content').innerHTML = `
-                            <div class="no-history">
-                                <h3>Connection Timeout</h3>
-                                <p>Database query timed out. Please check your internet connection.</p>
-                                <button onclick="loadLotteryHistory()" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-                                    Retry
-                                </button>
-                            </div>
-                        `;
-                        return;
-                    }
-                    throw queryError;
-                }
+                const roundsQuery = await db.collection('rounds').orderBy('createdAt', 'desc').limit(50).get();
                 
                 console.log('Rounds query result:', roundsQuery);
                 console.log('Number of docs:', roundsQuery.docs.length);
                 
                 if (roundsQuery.empty) {
-                    console.log('No completed rounds found');
-                    // Let's also check for any rounds at all
-                    try {
-                        const allRounds = await db.collection('rounds').limit(5).get();
-                        console.log('Total rounds in collection:', allRounds.docs.length);
-                        if (!allRounds.empty) {
-                            console.log('Sample round data:', allRounds.docs[0].data());
-                        }
-                    } catch (e) {
-                        console.log('Could not query all rounds:', e);
-                    }
+                    console.log('No rounds found');
                     displayHistory([]);
                     return;
                 }
                 
-                let historyData = roundsQuery.docs.map(doc => {
-                    const data = doc.data();
-                    console.log('Round data:', doc.id, data);
-                    return {
-                        id: doc.id,
-                        ...data,
-                        createdAt: data.createdAt || data.processedAt
-                    };
-                });
+                // Filter for completed rounds and process data
+                let historyData = roundsQuery.docs
+                    .filter(doc => {
+                        const data = doc.data();
+                        return data.status === 'completed' || data.winner; // Show completed rounds or rounds with winners
+                    })
+                    .map(doc => {
+                        const data = doc.data();
+                        console.log('Round data:', doc.id, data);
+                        return {
+                            id: doc.id,
+                            ...data,
+                            createdAt: data.createdAt || data.processedAt
+                        };
+                    });
+                
                 // Sort client-side by createdAt desc
                 historyData.sort((a, b) => {
                     const toMillis = (v) => {
