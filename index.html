@@ -1372,47 +1372,63 @@
                     createdAt: new Date(),
                 });
 
-                // Update round participants
-                if (currentRound) {
-                    try {
-                        if (currentRound.id) {
-                            const roundRef = db.collection('rounds').doc(currentRound.id);
-                            const roundDoc = await roundRef.get();
-                            if (roundDoc.exists) {
-                                const roundData = roundDoc.data();
-                                const newParticipants = [...(roundData.participants || []), {
-                                    userId: currentUser.uid,
-                                    walletAddress: wallet.publicKey.toString(),
-                                    amount: amount,
-                                    timestamp: new Date(),
-                                }];
-                                await roundRef.update({
-                                    participants: newParticipants,
-                                    totalAmount: (roundData.totalAmount || 0) + amount,
-                                });
-                                if (newParticipants.length >= 10) {
-                                    // Prevent adding more than 10 participants
-                                    if (newParticipants.length === 10) {
-                                        // Immediately trigger lottery when exactly 10 participants
-                                        await triggerLottery(roundRef.id);
-                                    } else {
-                                        // Revert the update if more than 10
-                                        await roundRef.update({
-                                            participants: roundData.participants,
-                                            totalAmount: roundData.totalAmount,
-                                        });
-                                        showNotification('Round is already full (10 participants)', 'warning');
-                                        return;
-                                    }
-                                }
-                            }
+                // Update round participants for the specific tier
+                try {
+                    // Find the active round for this tier level
+                    const roundsQuery = await db.collection('rounds')
+                        .where('status', '==', 'active')
+                        .where('level', '==', amount)
+                        .get();
+                    
+                    if (!roundsQuery.empty) {
+                        const roundDoc = roundsQuery.docs[0];
+                        const roundRef = roundDoc.ref;
+                        const roundData = roundDoc.data();
+                        
+                        // Check if user already participated in this round
+                        const existingParticipant = roundData.participants?.find(p => p.userId === currentUser.uid);
+                        if (existingParticipant) {
+                            showNotification('You have already participated in this round', 'warning');
+                            return;
                         }
-                    } catch (e) {
-                        console.warn('No permission to update round, waiting for backend processing:', e);
+                        
+                        const newParticipants = [...(roundData.participants || []), {
+                            userId: currentUser.uid,
+                            walletAddress: wallet.publicKey.toString(),
+                            amount: amount,
+                            timestamp: new Date(),
+                        }];
+                        
+                        await roundRef.update({
+                            participants: newParticipants,
+                            totalAmount: (roundData.totalAmount || 0) + amount,
+                        });
+                        
+                        // Check if round is full
+                        if (newParticipants.length >= 10) {
+                            // Mark round as completed to trigger lottery
+                            await roundRef.update({
+                                status: 'completed',
+                                completedAt: new Date()
+                            });
+                            showNotification('Round completed! Drawing in progress...', 'success');
+                        } else {
+                            showNotification(`Ticket purchased! ${10 - newParticipants.length} spots remaining`, 'success');
+                        }
+                        
+                        // Refresh the UI
+                        await loadCurrentRounds();
+                    } else {
+                        console.warn('No active round found for tier level:', amount);
+                        showNotification('No active round found for this tier', 'error');
                     }
+                } catch (e) {
+                    console.warn('Failed to update round participants:', e);
+                    showNotification('Ticket recorded but round update failed', 'warning');
                 }
             } catch (error) {
                 console.error('Failed to record purchase:', error);
+                showNotification('Failed to record purchase', 'error');
             }
         }
 
